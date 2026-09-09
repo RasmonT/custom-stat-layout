@@ -110,7 +110,7 @@ is rebuilt from tick and stat/var events. There is no faster data to have.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Port | 5030 | The loopback port. Change it only if something else already uses it. |
+| Port | 5030 | The loopback port. If it is already taken the plugin uses the next free port above it, up to nine ports higher, so a second client picks up 5031 on its own. Check the client log to see which port it bound. |
 | HP sweep at full health | off | The game hides the hitpoints sweep once you are at full health. Turn this on to keep it running anyway. |
 
 ## Using it in OBS
