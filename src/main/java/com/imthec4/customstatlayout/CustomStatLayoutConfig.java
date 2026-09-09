@@ -34,12 +34,13 @@ import net.runelite.client.config.Range;
 public interface CustomStatLayoutConfig extends Config
 {
 	String GROUP = "customstatlayout";
+	String KEY_PORT = "port";
 
 	@Range(min = 1024, max = 65535)
 	@ConfigItem(
-		keyName = "port",
+		keyName = KEY_PORT,
 		name = "Port",
-		description = "TCP port on 127.0.0.1 that serves stats.json. Only change this if something else on the machine already uses it.",
+		description = "TCP port on 127.0.0.1 that serves stats.json. If it is already taken - by a second client, for example - the plugin uses the next free port above it.",
 		position = 1
 	)
 	default int port()

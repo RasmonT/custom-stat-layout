@@ -109,6 +109,13 @@ public class CustomStatLayoutPlugin extends Plugin
 	private static final int SPEC_REGEN_TICKS = 50;
 	private static final int HP_REGEN_TICKS = 100;
 
+	/**
+	 * How many consecutive ports to try before giving up. A second client - someone
+	 * playing two accounts at once - cannot bind the port the first one took, so it
+	 * moves up to the next free one instead of serving nothing.
+	 */
+	private static final int PORT_SCAN_RANGE = 10;
+
 	@Inject
 	private Client client;
 
@@ -162,7 +169,8 @@ public class CustomStatLayoutPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (CustomStatLayoutConfig.GROUP.equals(event.getGroup()))
+		if (CustomStatLayoutConfig.GROUP.equals(event.getGroup())
+			&& CustomStatLayoutConfig.KEY_PORT.equals(event.getKey()))
 		{
 			stopServer();
 			startServer();
@@ -278,18 +286,24 @@ public class CustomStatLayoutPlugin extends Plugin
 
 	private void startServer()
 	{
-		int port = config.port();
-		try
+		int base = config.port();
+		for (int port = base; port < base + PORT_SCAN_RANGE && port <= 65535; port++)
 		{
-			server = new CustomStatLayoutServer(port, () -> snapshot);
-			log.info("Custom Stat Layout listening on http://127.0.0.1:{}/stats.json", server.port());
+			try
+			{
+				server = new CustomStatLayoutServer(port, () -> snapshot);
+				log.info("Custom Stat Layout listening on http://127.0.0.1:{}/stats.json", server.port());
+				return;
+			}
+			catch (IOException e)
+			{
+				log.debug("Custom Stat Layout could not open port {}", port, e);
+			}
 		}
-		catch (IOException e)
-		{
-			log.warn("Custom Stat Layout could not open port {}. Another program is probably using it; "
-				+ "pick a different port in the plugin settings.", port, e);
-			server = null;
-		}
+
+		server = null;
+		log.warn("Custom Stat Layout could not open any port between {} and {}. Another program is probably "
+			+ "using them; pick a different port in the plugin settings.", base, base + PORT_SCAN_RANGE - 1);
 	}
 
 	private void stopServer()
