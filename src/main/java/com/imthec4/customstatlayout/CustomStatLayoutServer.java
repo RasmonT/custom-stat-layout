@@ -36,7 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,15 +97,10 @@ class CustomStatLayoutServer
 		{
 			// closing is the only way to break out of accept(); a failure here changes nothing
 		}
+		// Deliberately not waiting for the workers. shutDown() must never block, and the
+		// listening port is already free once socket.close() returns above. The workers are
+		// daemon threads with a 5 second read timeout, so they end on their own.
 		workers.shutdownNow();
-		try
-		{
-			workers.awaitTermination(2, TimeUnit.SECONDS);
-		}
-		catch (InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
-		}
 	}
 
 	private void acceptLoop()
