@@ -61,7 +61,7 @@ plugin, and none of this applies.
   "hpRegen": 0.24, "specRegen": 0.78,
   "lightbearer": false, "rapidHeal": false,
   "praying": true, "tickTs": 1757289599400, "tickMs": 600, "ticks": 4213,
-  "specArmed": false, "stamina": false, "weight": 12,
+  "specArmed": false, "stamina": false, "running": true, "weight": 12,
   "poison": "none", "diseased": false,
   "ts": 1757289600000
 }
@@ -96,6 +96,9 @@ is rebuilt from tick and stat/var events. There is no faster data to have.
   metronome needs, and polling four times a tick could never give it.
 - `praying` is true while any prayer is on. RuneLite hides its flick helper when
   none is, and an overlay that wants to behave the same needs to know.
+- `running` is true while run is toggled on -- the run orb's on/off state,
+  independent of how much energy is left. A layout can grey or recolour the run
+  gauge when it is off, the way the game dims the orb.
 - `specArmed`, `stamina`, `poison` and `diseased` are the states the game paints
   onto the orbs themselves: the special attack orb lights up when the attack is
   armed, the run orb shows a stamina potion running, and the hitpoints orb is
