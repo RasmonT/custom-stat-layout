@@ -83,6 +83,8 @@ public class CustomStatLayoutPlugin extends Plugin
 	private static final int VARBIT_STAMINA = 25;
 	/** VarPlayerID.SA_ENABLED -- the special attack orb is lit because the attack is armed. */
 	private static final int VARP_SPECIAL_ENABLED = 301;
+	/** VarPlayerID.OPTION_RUN -- 1 while run is toggled on. */
+	private static final int VARP_RUN_ENABLED = 173;
 	/**
 	 * VarPlayerID.POISON. Negative is an immunity timer, zero is clean, positive is poisoned,
 	 * and at or above the threshold it is venom. The game tints the hitpoints orb for each.
@@ -359,6 +361,7 @@ public class CustomStatLayoutPlugin extends Plugin
 		// State the game paints onto the orbs themselves, so a layout can do the same
 		b.append(",\"specArmed\":").append(client.getVarpValue(VARP_SPECIAL_ENABLED) == 1);
 		b.append(",\"stamina\":").append(client.getVarbitValue(VARBIT_STAMINA) == 1);
+		b.append(",\"running\":").append(client.getVarpValue(VARP_RUN_ENABLED) == 1);
 		b.append(",\"weight\":").append(client.getWeight());
 		b.append(",\"poison\":\"").append(poisonState()).append('"');
 		b.append(",\"diseased\":").append(client.getVarpValue(VARP_DISEASE) > 0);
