@@ -28,6 +28,7 @@ dependencies {
 }
 
 group = 'com.imthec4'
+version = '1.1.0'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'

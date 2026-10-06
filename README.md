@@ -1,7 +1,18 @@
 # Custom Stat Layout
 
-A RuneLite plugin that publishes the four orb values as JSON on `127.0.0.1`, so a
-browser-source overlay can draw its own orbs instead of cropping the client's.
+Show your hitpoints, prayer, run energy and special attack on stream in a design of
+your own. The plugin shares those four values with a browser-source overlay in OBS or
+Streamlabs, so the overlay can draw its own orbs instead of showing a cropped piece of
+the game screen.
+
+The side panel shows the address your overlay should read, with a button to copy it.
+Nothing leaves your computer: the values are only served on 127.0.0.1, with no account
+and no uploads.
+
+## How it works
+
+The plugin publishes the four orb values as JSON on `127.0.0.1`, so a browser-source
+overlay can draw its own orbs instead of cropping the client's.
 
 This exists because the game paints its icons into the same pixels as the orb
 fill. Cropping the client can never separate them. Reading the numbers and
@@ -11,7 +22,7 @@ colour, the shape and the animation become a web page, not a video render.
 ## Run it
 
 Double-click `RUN.bat`. It starts the normal RuneLite client with this plugin
-compiled in — same settings, same Plugin Hub plugins. Then enable **Custom Stat
+compiled in - same settings, same Plugin Hub plugins. Then enable **Custom Stat
 Layout** in the plugin list.
 
 The first run downloads Gradle and the client and takes a few minutes. It needs
@@ -77,7 +88,7 @@ plugin, and none of this applies.
 - `loggedIn: false` is sent on the login screen and during a world hop, with no
   numbers. An overlay should hold its last frame rather than flash empty orbs.
 - `hpRegen` and `specRegen` are how far through its regeneration cycle each orb
-  is, 0 to 1 — the sweep the game draws around the orb, not a number the player
+  is, 0 to 1 - the sweep the game draws around the orb, not a number the player
   reads. Hitpoints regenerate one point every 100 ticks, halved by the Rapid
   Heal prayer; special attack regenerates 10% every 50 ticks, halved by a
   Lightbearer ring, and does not tick at all while the bar is full. `hpRegen` is
@@ -115,10 +126,11 @@ is rebuilt from tick and stat/var events. There is no faster data to have.
 | --- | --- | --- |
 | Port | 5030 | The loopback port. If it is already taken the plugin uses the next free port above it, up to nine ports higher, so a second client picks up 5031 on its own. Check the client log to see which port it bound. |
 | HP sweep at full health | off | The game hides the hitpoints sweep once you are at full health. Turn this on to keep it running anyway. |
+| Show side panel | on | The sidebar button that opens the panel with your overlay's address, a Copy button and the Discord link. |
 
 ## Using it in OBS
 
-Add a Browser Source pointing at your overlay page — a local file or a hosted
+Add a Browser Source pointing at your overlay page - a local file or a hosted
 one, OBS loads it either way:
 
 - `file:///C:/path/to/overlay.html?src=1`
@@ -135,17 +147,30 @@ than a broken one.
 ## Security
 
 The socket binds to the loopback address only, so nothing outside this machine
-can reach it — verified by connecting from the machine's own LAN address and
+can reach it - verified by connecting from the machine's own LAN address and
 being refused.
 
 The server has exactly one response: the JSON above. It reads nothing from disk
 and serves no files, so there is no path to traverse and nothing to leak.
 
 Responses carry `Access-Control-Allow-Origin: *`, which means any page open in
-your browser while the game runs can read them. That is deliberate — an overlay
+your browser while the game runs can read them. That is deliberate - an overlay
 has to be loadable from a local file, another port, or a website. It is also why
 nothing identifying is in the payload: no account name, no world, no location.
 Only the four numbers already on screen in the client.
+
+## Side panel
+
+The panel shows the exact address your overlay should read, for example
+`http://127.0.0.1:5030/stats.json`, with a **Copy** button. If the port you chose was
+taken (a second client, for example), it shows the one actually in use, so there is no
+need to look in the client log. It also says whether you are logged in.
+
+## Questions and bugs
+
+Questions, ideas or a bug? Join the [Discord](https://discord.gg/XgxjhyznbZ) or open an
+issue on GitHub. The side panel has a **Join the Discord** button as well; it only opens
+your browser when you click it.
 
 ## Publishing it
 

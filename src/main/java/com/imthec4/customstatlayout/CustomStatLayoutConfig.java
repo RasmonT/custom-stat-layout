@@ -35,6 +35,7 @@ public interface CustomStatLayoutConfig extends Config
 {
 	String GROUP = "customstatlayout";
 	String KEY_PORT = "port";
+	String KEY_SHOW_PANEL = "showPanel";
 
 	@Range(min = 1024, max = 65535)
 	@ConfigItem(
@@ -58,5 +59,16 @@ public interface CustomStatLayoutConfig extends Config
 	default boolean hpRegenAtFullHealth()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = KEY_SHOW_PANEL,
+		name = "Show side panel",
+		description = "Show the button in the RuneLite sidebar that opens the panel with your overlay's address and the Discord link.",
+		position = 4
+	)
+	default boolean showPanel()
+	{
+		return true;
 	}
 }

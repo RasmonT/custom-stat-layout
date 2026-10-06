@@ -27,6 +27,7 @@ package com.imthec4.customstatlayout;
 
 import com.google.inject.Provides;
 import java.io.IOException;
+import javax.swing.SwingUtilities;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -47,6 +48,9 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 
 /**
  * Publishes the four orb values, and the two regeneration timers that sweep around
@@ -65,7 +69,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 @Slf4j
 @PluginDescriptor(
 	name = "Custom Stat Layout",
-	description = "Serves live HP, Prayer, run energy and special attack as JSON on 127.0.0.1 for stream overlays",
+	description = "Shares live HP, prayer, run energy and special attack with a stream overlay so it can draw its own orbs",
 	tags = {"stream", "streaming", "obs", "overlay", "hud", "stats", "orbs"}
 )
 public class CustomStatLayoutPlugin extends Plugin
@@ -130,6 +134,13 @@ public class CustomStatLayoutPlugin extends Plugin
 	private volatile String snapshot = "{\"ok\":false,\"loggedIn\":false}";
 	private CustomStatLayoutServer server;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	/** Built on startUp, which runs on the Swing thread; only touched there afterwards. */
+	private CustomStatLayoutPanel panel;
+	private NavigationButton navButton;
+
 	private int ticksSinceSpecRegen;
 	private int ticksSinceHpRegen;
 	private boolean wearingLightbearer;
@@ -155,6 +166,17 @@ public class CustomStatLayoutPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		panel = new CustomStatLayoutPanel();
+		navButton = NavigationButton.builder()
+			.tooltip("Custom Stat Layout")
+			.icon(ImageUtil.loadImageResource(getClass(), "panel_icon.png"))
+			.priority(10)
+			.panel(panel)
+			.build();
+		if (config.showPanel())
+		{
+			clientToolbar.addNavigation(navButton);
+		}
 		startServer();
 		// Plugins start on the Swing thread, and no game event need arrive for a long time
 		// afterwards - at the login screen, none ever does. Without this the snapshot would
@@ -166,16 +188,40 @@ public class CustomStatLayoutPlugin extends Plugin
 	protected void shutDown()
 	{
 		stopServer();
+		clientToolbar.removeNavigation(navButton);
+		navButton = null;
+		panel = null;
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (CustomStatLayoutConfig.GROUP.equals(event.getGroup())
-			&& CustomStatLayoutConfig.KEY_PORT.equals(event.getKey()))
+		if (!CustomStatLayoutConfig.GROUP.equals(event.getGroup()))
+		{
+			return;
+		}
+		if (CustomStatLayoutConfig.KEY_PORT.equals(event.getKey()))
 		{
 			stopServer();
 			startServer();
+		}
+		else if (CustomStatLayoutConfig.KEY_SHOW_PANEL.equals(event.getKey()))
+		{
+			SwingUtilities.invokeLater(() ->
+			{
+				if (navButton == null)
+				{
+					return;
+				}
+				if (config.showPanel())
+				{
+					clientToolbar.addNavigation(navButton);
+				}
+				else
+				{
+					clientToolbar.removeNavigation(navButton);
+				}
+			});
 		}
 	}
 
@@ -248,6 +294,15 @@ public class CustomStatLayoutPlugin extends Plugin
 			ticksSinceSpecRegen = 0;
 		}
 		update();
+
+		boolean loggedIn = state == GameState.LOGGED_IN || state == GameState.LOADING || state == GameState.HOPPING;
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel != null)
+			{
+				panel.setLoggedIn(loggedIn);
+			}
+		});
 	}
 
 	/**
@@ -295,6 +350,7 @@ public class CustomStatLayoutPlugin extends Plugin
 			{
 				server = new CustomStatLayoutServer(port, () -> snapshot);
 				log.info("Custom Stat Layout listening on http://127.0.0.1:{}/stats.json", server.port());
+				showServer(server.port(), base, base + PORT_SCAN_RANGE - 1);
 				return;
 			}
 			catch (IOException e)
@@ -306,6 +362,19 @@ public class CustomStatLayoutPlugin extends Plugin
 		server = null;
 		log.warn("Custom Stat Layout could not open any port between {} and {}. Another program is probably "
 			+ "using them; pick a different port in the plugin settings.", base, base + PORT_SCAN_RANGE - 1);
+		showServer(-1, base, base + PORT_SCAN_RANGE - 1);
+	}
+
+	/** Hands the bound port to the side panel on the Swing thread. */
+	private void showServer(int port, int from, int to)
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel != null)
+			{
+				panel.setServer(port, from, to);
+			}
+		});
 	}
 
 	private void stopServer()
