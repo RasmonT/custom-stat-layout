@@ -19,43 +19,6 @@ fill. Cropping the client can never separate them. Reading the numbers and
 drawing the orb from scratch can, and it also frees the design completely: the
 colour, the shape and the animation become a web page, not a video render.
 
-## Run it
-
-Double-click `RUN.bat`. It starts the normal RuneLite client with this plugin
-compiled in - same settings, same Plugin Hub plugins. Then enable **Custom Stat
-Layout** in the plugin list.
-
-The first run downloads Gradle and the client and takes a few minutes. It needs
-a JDK 11 or newer; RuneLite's own bundled runtime is a JRE and cannot compile:
-
-    winget install EclipseAdoptium.Temurin.21.JDK
-
-Open a new terminal window afterwards so the changed PATH is picked up.
-
-## Jagex account
-
-A client started from a build like this one is not launched by the Jagex
-Launcher, so it has no session to log in with. RuneLite documents the way
-around it in
-[Using Jagex Accounts](https://github.com/runelite/runelite/wiki/Using-Jagex-Accounts):
-
-1. Make sure the RuneLite launcher is version 2.6.3 or newer.
-2. Run **RuneLite (configure)** from the Start menu.
-3. In **Client arguments** add `--insecure-write-credentials`, then Save.
-4. Launch RuneLite the normal way, through the Jagex Launcher. It writes your
-   session to `%USERPROFILE%\.runelite\credentials.properties`.
-5. Now `RUN.bat` logs in with those saved credentials.
-
-That file logs into your account without a password, so treat it like a
-password: do not share it, do not commit it. When you are done developing,
-delete it to put RuneLite back to normal, and remove
-`--insecure-write-credentials` from the launcher arguments. If it ever leaks,
-**End sessions** under account settings on runescape.com invalidates it.
-
-This is only needed while the plugin is run from source. Once it is on the
-Plugin Hub it installs into your normal Jagex-launched client like any other
-plugin, and none of this applies.
-
 ## What it serves
 
 `http://127.0.0.1:5030/stats.json`
@@ -166,15 +129,13 @@ The panel shows the exact address your overlay should read, for example
 taken (a second client, for example), it shows the one actually in use, so there is no
 need to look in the client log. It also says whether you are logged in.
 
+## Building it from source
+
+Only needed if you want to change the plugin. See
+[CONTRIBUTING.md](CONTRIBUTING.md); installing it from the Plugin Hub needs none of it.
+
 ## Questions and bugs
 
 Questions, ideas or a bug? Join the [Discord](https://discord.gg/XgxjhyznbZ) or open an
 issue on GitHub. The side panel has a **Join the Discord** button as well; it only opens
 your browser when you click it.
-
-## Publishing it
-
-`runelite-plugin.properties` is filled in, so this is ready to be submitted to
-the RuneLite Plugin Hub as a repository of its own. `bank-bridge` is the
-precedent for a plugin that opens a loopback socket: it was accepted with a
-warning banner describing what it exposes.
