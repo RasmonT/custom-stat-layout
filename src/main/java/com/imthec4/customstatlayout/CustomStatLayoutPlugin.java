@@ -42,6 +42,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -69,7 +70,7 @@ import net.runelite.client.util.ImageUtil;
 @Slf4j
 @PluginDescriptor(
 	name = "Custom Stat Layout",
-	description = "Shares live HP, prayer, run energy and special attack with a stream overlay so it can draw its own orbs",
+	description = "Shares live HP, prayer, run energy, special attack and wind motes with a stream overlay so it can draw its own orbs",
 	tags = {"stream", "streaming", "obs", "overlay", "hud", "stats", "orbs"}
 )
 public class CustomStatLayoutPlugin extends Plugin
@@ -105,6 +106,31 @@ public class CustomStatLayoutPlugin extends Plugin
 	/** gameval ItemID.LIGHTBEARER -- the ring that doubles special attack regeneration. */
 	private static final int LIGHTBEARER = 25975;
 	private static final int MAX_SOUL_STACKS = 5;
+
+	// Sailing. While the player holds the helm (and the game setting "wind on orb" is on)
+	// the special attack orb becomes the wind mote orb: a gust icon, the number of stored
+	// wind motes, and clicking it releases one for a burst of speed. The boat values are
+	// the ones the game's own Sailing side panel reads; they are live for as long as the
+	// player is aboard and reset to 0 on leaving. IDs from gameval VarbitID.
+	/** VarbitID.SAILING_SIDEPANEL_BOAT_WIND_CHARGES -- wind motes stored in the catcher. */
+	private static final int VARBIT_WIND_MOTES = 19178;
+	/** VarbitID.SAILING_SIDEPANEL_BOAT_MAX_WIND_CHARGES -- 2 for a wind catcher, 3 for a gale catcher, 0 without one. */
+	private static final int VARBIT_WIND_MOTES_MAX = 11629;
+	/** VarbitID.SAILING_SIDEPANEL_PLAYER_AT_HELM -- 1 while the player holds the helm. */
+	private static final int VARBIT_AT_HELM = 19205;
+	/** VarbitID.SAILING_SIDEPANEL_BOAT_HP / _HP_MAX -- hull hitpoints; max is 0 when not aboard. */
+	private static final int VARBIT_BOAT_HP = 19181;
+	private static final int VARBIT_BOAT_HP_MAX = 19177;
+	/** gameval InterfaceID.Orbs.SPECENERGY_ICON -- the icon the game draws in the special attack orb. */
+	private static final int ORB_SPEC_ICON = (160 << 16) | 42;
+	/**
+	 * gameval SpriteID.OrbIcon: the gust icons the game puts in the orb while it is the wind
+	 * mote orb (_21 with no motes stored, _22 with at least one). Reading the icon rather
+	 * than guessing from state means the orb mirrors whatever the game decided to draw,
+	 * including the player's own "wind on orb" setting.
+	 */
+	private static final int SPRITE_ORB_WIND_EMPTY = 5760;
+	private static final int SPRITE_ORB_WIND = 5761;
 
 	/** values() allocates a fresh array on every call, and this is read on every event. */
 	private static final Prayer[] PRAYERS = Prayer.values();
@@ -417,7 +443,15 @@ public class CustomStatLayoutPlugin extends Plugin
 		b.append(",\"run\":").append(runRaw / 100).append(",\"runRaw\":").append(runRaw);
 		b.append(",\"spec\":").append(specRaw / 10).append(",\"specRaw\":").append(specRaw);
 		b.append(",\"souls\":").append(souls).append(",\"soulsMax\":").append(MAX_SOUL_STACKS);
-		b.append(",\"specMode\":\"").append(soulreaper ? "souls" : "percent").append('"');
+		b.append(",\"specMode\":\"").append(soulreaper ? "souls" : isWindOrb() ? "wind" : "percent").append('"');
+		// Sailing: what the boat knows, for an overlay that mirrors the wind mote orb
+		int boatHpMax = client.getVarbitValue(VARBIT_BOAT_HP_MAX);
+		b.append(",\"onBoat\":").append(boatHpMax > 0);
+		b.append(",\"atHelm\":").append(client.getVarbitValue(VARBIT_AT_HELM) == 1);
+		b.append(",\"windMotes\":").append(client.getVarbitValue(VARBIT_WIND_MOTES));
+		b.append(",\"windMotesMax\":").append(client.getVarbitValue(VARBIT_WIND_MOTES_MAX));
+		b.append(",\"boatHp\":").append(client.getVarbitValue(VARBIT_BOAT_HP));
+		b.append(",\"boatHpMax\":").append(boatHpMax);
 		// How far through the current regeneration cycle each orb is, 0..1. This is the
 		// sweep the game draws around the orb, not a value the player can read as a number.
 		b.append(",\"hpRegen\":").append(round3(hpRegen));
@@ -444,6 +478,18 @@ public class CustomStatLayoutPlugin extends Plugin
 		b.append('}');
 
 		snapshot = b.toString();
+	}
+
+	/** True while the game is drawing the wind mote icon in the special attack orb. */
+	private boolean isWindOrb()
+	{
+		Widget icon = client.getWidget(ORB_SPEC_ICON);
+		if (icon == null)
+		{
+			return false;
+		}
+		int sprite = icon.getSpriteId();
+		return sprite == SPRITE_ORB_WIND_EMPTY || sprite == SPRITE_ORB_WIND;
 	}
 
 	/** Three decimals is finer than a single tick of either cycle, and keeps the JSON short. */

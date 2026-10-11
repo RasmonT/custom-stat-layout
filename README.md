@@ -3,7 +3,8 @@
 Show your hitpoints, prayer, run energy and special attack on stream in a design of
 your own. The plugin shares those four values with a browser-source overlay in OBS or
 Streamlabs, so the overlay can draw its own orbs instead of showing a cropped piece of
-the game screen.
+the game screen. At the helm of your boat the fourth orb follows the game and becomes
+the wind mote orb.
 
 The side panel shows the address your overlay should read, with a button to copy it.
 Nothing leaves your computer: the values are only served on 127.0.0.1, with no account
@@ -32,6 +33,8 @@ colour, the shape and the animation become a web page, not a video render.
   "spec": 25, "specRaw": 250,
   "souls": 0, "soulsMax": 5,
   "specMode": "percent",
+  "onBoat": false, "atHelm": false,
+  "windMotes": 0, "windMotesMax": 0, "boatHp": 0, "boatHpMax": 0,
   "hpRegen": 0.24, "specRegen": 0.78,
   "lightbearer": false, "rapidHeal": false,
   "praying": true, "tickTs": 1757289599400, "tickMs": 600, "ticks": 4213,
@@ -45,9 +48,18 @@ colour, the shape and the animation become a web page, not a video render.
   actually tracks. The overlay uses the raw value so the liquid moves smoothly
   instead of stepping a whole percent at a time. `spec` / `specRaw` are the same
   idea in tenths.
-- `specMode` is `"souls"` while a Soulreaper axe is wielded, because the game
-  replaces the number in the special attack orb with the soul stack count. An
-  overlay that mirrors the orb should show `souls` / `soulsMax` in that case.
+- `specMode` says what the special attack orb is showing: `"percent"` normally,
+  `"souls"` while a Soulreaper axe is wielded (the game replaces the number with
+  the soul stack count), and `"wind"` while you hold the helm of a boat and the
+  game has turned the orb into the wind mote orb. An overlay that mirrors the orb
+  shows `souls` / `soulsMax` or `windMotes` / `windMotesMax` in those modes. The
+  mode is read from the icon the game is drawing in the orb, so it also follows
+  the game's own "wind on orb" setting.
+- `windMotes` / `windMotesMax` are the wind motes stored in the boat's catcher
+  (max 2 for a wind catcher, 3 for a gale catcher, 0 without one); `boatHp` /
+  `boatHpMax` are the hull hitpoints; `onBoat` and `atHelm` say where you are.
+  All of these are the values the game's own Sailing side panel reads, live while
+  you are aboard and 0 on land.
 - `loggedIn: false` is sent on the login screen and during a world hop, with no
   numbers. An overlay should hold its last frame rather than flash empty orbs.
 - `hpRegen` and `specRegen` are how far through its regeneration cycle each orb
