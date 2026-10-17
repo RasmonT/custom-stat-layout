@@ -132,6 +132,23 @@ public class CustomStatLayoutPlugin extends Plugin
 	private static final int SPRITE_ORB_WIND_EMPTY = 5760;
 	private static final int SPRITE_ORB_WIND = 5761;
 
+	// Hitpoints orb colour. The game swaps the orb's filler sprite for poison, venom,
+	// disease and the Nightmare's parasite (pink), and draws a second half-filler when two
+	// of them apply at once. The sprites are read directly, the same way the special attack
+	// icon is, so the overlay follows whatever the game draws.
+	/** gameval InterfaceID.Orbs.HEALTH_INDICATOR -- the filler sprite of the hitpoints orb. */
+	private static final int ORB_HP_FILLER = (160 << 16) | 11;
+	/** gameval InterfaceID.Orbs.HEALTH_EXTRAPOISONHALF_CONTENTS -- the right half, shown when two states apply at once. */
+	private static final int ORB_HP_HALF_FILLER = (160 << 16) | 13;
+	/** gameval SpriteID.OrbFiller. The parasite one is unnamed there (_12); value confirmed in game. */
+	private static final int SPRITE_HP_NORMAL = 1060;
+	private static final int SPRITE_HP_POISON = 1061;
+	private static final int SPRITE_HP_DISEASE = 1062;
+	private static final int SPRITE_HP_VENOM = 1102;
+	private static final int SPRITE_HP_PARASITE = 1636;
+	/** VarbitID.PARASITE -- 1 while the Nightmare's parasite is inside the player. */
+	private static final int VARBIT_PARASITE = 10151;
+
 	/** values() allocates a fresh array on every call, and this is read on every event. */
 	private static final Prayer[] PRAYERS = Prayer.values();
 	/** One game tick, in milliseconds. */
@@ -468,6 +485,16 @@ public class CustomStatLayoutPlugin extends Plugin
 		b.append(",\"weight\":").append(client.getWeight());
 		b.append(",\"poison\":\"").append(poisonState()).append('"');
 		b.append(",\"diseased\":").append(client.getVarpValue(VARP_DISEASE) > 0);
+		// What the hitpoints orb is painted with right now, read from the game's own sprites
+		Widget hpFiller = client.getWidget(ORB_HP_FILLER);
+		Widget hpHalf = client.getWidget(ORB_HP_HALF_FILLER);
+		int hpSprite = hpFiller == null ? -1 : hpFiller.getSpriteId();
+		boolean parasite = hpSprite == SPRITE_HP_PARASITE || client.getVarbitValue(VARBIT_PARASITE) > 0;
+		b.append(",\"parasite\":").append(parasite);
+		b.append(",\"hpOrbState\":\"").append(hpOrbState(hpSprite)).append('"');
+		// The second half of the orb, only when the game is drawing one
+		boolean halfShown = hpHalf != null && !hpHalf.isHidden();
+		b.append(",\"hpOrbState2\":\"").append(halfShown ? hpOrbState(hpHalf.getSpriteId()) : "none").append('"');
 		if (regenError != null)
 		{
 			b.append(",\"regenError\":");
@@ -478,6 +505,28 @@ public class CustomStatLayoutPlugin extends Plugin
 		b.append('}');
 
 		snapshot = b.toString();
+	}
+
+	/** Name of a hitpoints orb filler sprite. */
+	private static String hpOrbState(int sprite)
+	{
+		switch (sprite)
+		{
+			case SPRITE_HP_NORMAL:
+				return "normal";
+			case SPRITE_HP_POISON:
+				return "poison";
+			case SPRITE_HP_VENOM:
+				return "venom";
+			case SPRITE_HP_DISEASE:
+				return "disease";
+			case SPRITE_HP_PARASITE:
+				return "parasite";
+			case -1:
+				return "unknown";
+			default:
+				return "other";
+		}
 	}
 
 	/** True while the game is drawing the wind mote icon in the special attack orb. */

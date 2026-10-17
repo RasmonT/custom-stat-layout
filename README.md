@@ -39,7 +39,8 @@ colour, the shape and the animation become a web page, not a video render.
   "lightbearer": false, "rapidHeal": false,
   "praying": true, "tickTs": 1757289599400, "tickMs": 600, "ticks": 4213,
   "specArmed": false, "stamina": false, "running": true, "weight": 12,
-  "poison": "none", "diseased": false,
+  "poison": "none", "diseased": false, "parasite": false,
+  "hpOrbState": "normal", "hpOrbState2": "none",
   "ts": 1757289600000
 }
 ```
@@ -85,12 +86,17 @@ is rebuilt from tick and stat/var events. There is no faster data to have.
 - `running` is true while run is toggled on -- the run orb's on/off state,
   independent of how much energy is left. A layout can grey or recolour the run
   gauge when it is off, the way the game dims the orb.
-- `specArmed`, `stamina`, `poison` and `diseased` are the states the game paints
-  onto the orbs themselves: the special attack orb lights up when the attack is
-  armed, the run orb shows a stamina potion running, and the hitpoints orb is
-  tinted for poison, venom or disease. `poison` is one of `none`, `immune`,
-  `poison`, `venom`. A layout that wants to look like the game needs these; one
-  that does not can ignore them.
+- `specArmed`, `stamina`, `poison`, `diseased` and `parasite` are the states the
+  game paints onto the orbs themselves: the special attack orb lights up when the
+  attack is armed, the run orb shows a stamina potion running, and the hitpoints
+  orb is tinted for poison, venom, disease or the Nightmare's parasite. `poison`
+  is one of `none`, `immune`, `poison`, `venom`. A layout that wants to look like
+  the game needs these; one that does not can ignore them.
+- `hpOrbState` is the colour the game is drawing in the hitpoints orb right now,
+  read from its sprite: `normal`, `poison`, `venom`, `disease`, `parasite` (pink),
+  or `other` if the game ever adds one this plugin does not know. When two states
+  apply at once the game splits the orb in half and `hpOrbState2` names the right
+  half; otherwise it is `none`.
 - `ticks` counts game ticks seen. If it stays at 0 while the other values move,
   tick events are not reaching the plugin. `regenError` appears only if the
   regeneration maths ever throws.
